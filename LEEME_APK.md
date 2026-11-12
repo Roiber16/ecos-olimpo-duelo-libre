@@ -182,28 +182,33 @@ Si no quieres instalar apps, sube solo lo necesario (sin la carpeta
    Si ya tiene wifi, puede usar la wifi de la casa en vez del punto
    de acceso, pero el punto de acceso es lo más seguro sin internet.
 2. Abre la app, pulsa **Duelo por wifi local** > **Crear sala**.
-3. Te salen un **código de 4 letras** y un **QR**. Enséñaselos a tu amigo.
+3. El juego te muestra tu **IP** (por ejemplo 192.168.43.1) y tu
+   **código de 4 letras**. Díselos a tu amigo.
 
 **Teléfono 2 (el invitado):**
 
 1. Ve a **Ajustes > Wifi**, busca el nombre del punto de acceso del
    teléfono 1 y conéctate con su contraseña. No hace falta internet,
    solo estar en la misma wifi.
-2. Abre la app, pulsa **Duelo por wifi local** > **Unirse**.
-3. Escribe el código de 4 letras y pulsa **Unirse** (o escanea el QR
-   con la cámara, si le diste permiso).
-4. Cuando conecte, el anfitrión pulsa **Iniciar duelo** y juegan con
+2. Abre la app, pulsa **Duelo por wifi local** y elige una de estas:
+   - **Unirse por IP** (la forma normal): escribe la IP que te dio
+     el anfitrión (por ejemplo 192.168.43.1) y pulsa **Unirse**.
+     Verás la sala del anfitrión con su nombre, su IP y los jugadores.
+   - **Unirse con código**: escribe el código de 4 letras y pulsa
+     **Entrar**; después escanea el QR del anfitrión o pega su texto.
+3. Cuando conecte, el anfitrión pulsa **Iniciar duelo** y juegan con
    las mismas reglas: Destino 20, energía 1 a 6, 3 carriles.
 
 **Si no conecta:**
 
 - Comprueba que los dos están en la **misma** wifi (el punto de acceso
   del teléfono 1) y que el punto de acceso sigue encendido.
-- Prueba con el **código a mano** en vez del QR: el QR necesita internet
-  la primera vez (la librería se descarga de internet); el código
-  funciona siempre sin internet.
-- Si se corta a mitad de partida, el juego ofrece seguir en
-  **modo pasar el teléfono** con el mismo mazo.
+- Prueba primero **Unirse por IP** (es la ruta más fiable); el código
+  y el QR quedan como último recurso.
+  La IP sola no conecta por sí misma: el teléfono del anfitrión tiene
+  que tener la sala creada (su pequeño servidor local) para responder.
+- Si se corta a mitad de partida, crea la sala de nuevo: no se puede
+  retomar una partida cortada.
 - Si sigue sin conectar, haz captura del error y del código que sale
   y enséñamela.
 
@@ -228,8 +233,8 @@ Si no quieres instalar apps, sube solo lo necesario (sin la carpeta
 la compilación y la app.
 
 **¿Necesito internet para jugar?** No. Solo para descargar la APK la
-primera vez y para el QR la primera vez. El juego, el constructor,
-la IA y el wifi local funcionan sin internet.
+primera vez. El juego, el constructor, la IA y el wifi local (incluido
+el QR) funcionan sin internet.
 
 **¿Por qué la APK se llama app-debug.apk?** Porque es de pruebas.
 Cuando el juego esté listo para publicar, se hará una versión
