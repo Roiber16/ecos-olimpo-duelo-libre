@@ -1,0 +1,55 @@
+# Ecos del Olimpo - Duelo Libre
+# Compila la APK debug automáticamente cada vez que se sube código a main,
+# y también cuando se pulsa "Run workflow" a mano en GitHub.
+# La APK aparece en: Actions > (la ejecución) > Artifacts > ecos-del-olimpo-duelo-libre-debug
+# Es una APK DEBUG (sin firmar para Play Store): sirve para instalarla
+# directamente en el teléfono y probar. No es una versión de tienda.
+name: Compilar APK Duelo Libre
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-apk:
+    name: Compilar APK debug
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@v4
+
+      - name: Instalar Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar Java 21 (JDK)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Instalar dependencias (Capacitor)
+        run: npm ci
+
+      - name: Preparar Android (crea la plataforma si falta, copia icono/splash y fija el manifiesto)
+        run: node scripts/setup-android.js
+
+      - name: Sincronizar la web con Android
+        run: npx cap sync android
+
+      - name: Compilar APK debug
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --stacktrace
+
+      - name: Guardar la APK como descarga
+        uses: actions/upload-artifact@v4
+        with:
+          name: ecos-del-olimpo-duelo-libre-debug
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 30
