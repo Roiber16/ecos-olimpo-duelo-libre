@@ -1,0 +1,9 @@
+{
+  "appId": "com.ecosdelolimpo.duelolibre",
+  "appName": "Ecos del Olimpo - Duelo Libre",
+  "webDir": "www",
+  "backgroundColor": "#e8dcc3",
+  "server": {
+    "androidScheme": "https"
+  }
+}

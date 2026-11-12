@@ -1,0 +1,21 @@
+# Dependencias de Node (se instalan con `npm ci` en GitHub Actions)
+# OJO: package-lock.json NO se ignora, tiene que estar en el repo para que `npm ci` funcione.
+node_modules/
+
+# Archivos generados por Gradle / Android Studio (se regeneran al compilar)
+android/.gradle/
+android/app/build/
+android/build/
+android/*.iml
+android/app/*.iml
+android/local.properties
+
+# APK compiladas (se descargan desde GitHub Actions, no se suben al repo)
+*.apk
+*.aab
+
+# Sistema y editores
+.DS_Store
+Thumbs.db
+.idea/
+*.log

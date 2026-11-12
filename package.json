@@ -1,0 +1,17 @@
+{
+  "name": "ecos-del-olimpo-duelo-libre",
+  "version": "0.1.0",
+  "description": "Ecos del Olimpo - Duelo Libre: prototipo jugable offline con 100 cartas, duelo contra la IA y wifi local por QR/c\u00f3digo. Empaquetado con Capacitor para Android.",
+  "private": true,
+  "scripts": {
+    "sync": "npx cap sync android",
+    "open:android": "npx cap open android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.0.0",
+    "@capacitor/core": "^8.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.0.0"
+  }
+}
