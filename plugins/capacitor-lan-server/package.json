@@ -1,0 +1,1 @@
+{"capacitor":{"android":{"src":"android"}},"description":"Servidor HTTP local en la red LAN para Ecos del Olimpo: el anfitrión sirve la señalización wifi local (WebRTC) desde su propio teléfono. Solo Android.","license":"MIT","main":"dist/plugin.js","name":"capacitor-lan-server","peerDependencies":{"@capacitor/core":">=7.0.0"},"version":"1.0.0"}
