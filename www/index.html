@@ -298,6 +298,14 @@ body.no-anim #view-menu .stage>img.paint{animation:none!important;transform:none
    6 tiras SEPARADAS, cada una tapando su tira pintada (posiciones medidas
    sobre la foto aprobada, en % del escenario); la pintura se ve entre
    ellas. La pancarta del título forma parte de la pintura. */
+/* La navegación es una capa absoluta a la medida del escenario: las
+   tiras se posicionan en % contra esta capa (que mide lo mismo que el
+   escenario), NUNCA contra un <nav> en flujo. Un <nav> sin posicionar
+   tiene altura 0 y, si algo le aplica un transform, se convierte en el
+   bloque contenedor de las tiras y sus top/height en % colapsan a 0:
+   así murieron los botones en la v18 en pantallas 20:9. Con la capa
+   absoluta eso es imposible, lleve o no lleve transform. */
+#view-menu nav{position:absolute;inset:0;z-index:3}
 .strip-btn{
   position:absolute;left:54%;width:38.5%;z-index:3;
   display:flex;align-items:center;gap:4.5%;text-align:left;
@@ -1697,16 +1705,34 @@ footer{display:none}
 @media (min-aspect-ratio: 2096/1184){
   .stage:not(.campo-stage){margin-top:calc((100vh - 100vw*1184/2096)*(var(--bandf,.5) - .5));margin-top:calc((100dvh - 100vw*1184/2096)*(var(--bandf,.5) - .5))}
   #view-splash{--bandf:.15}
+  /* El menú se ancla casi arriba del todo: la pancarta pintada con el
+     título (del ~4 % al ~23 % de la pintura) queda ENTERA dentro de la
+     banda visible, y las tiras se recomprimen abajo para que también
+     quepa «Ajustes» sin cortarse. */
+  #view-menu{--bandf:.14}
   #view-perfil{--bandf:.58}
   #view-ajustes{--bandf:.86}
   #view-galeria{--bandf:.66}
   #view-constructor{--bandf:.86}
   #view-sala{--bandf:.84}
   #view-ia{--bandf:.8}
-  /* El menú: las tiras suben lo justo para que «Ajustes» no se corte
-     abajo, y el medallón del perfil baja a la banda visible. */
-  #view-menu nav{transform:translateY(-2.6cqw)}
-  #view-menu .menu-profile-btn{transform:translateY(4.2cqw)}
+  /* El menú en pantalla ancha: SIN transform en el <nav> (ese transform
+     fue el fallo de la v18: convertía el <nav> en el bloque contenedor
+     de las tiras y las colapsaba a altura 0, invisibles e intocables;
+     solo se veían las tiras pintadas en la acuarela). En su lugar, la
+     pila de tiras se recomprime dentro de la banda visible (con el
+     ancla --bandf:.14 la banda va del ~3 % al ~82 % del escenario):
+     las 6 tiras enteras, del 24,6 % al 79,4 %, y el medallón del
+     perfil entero junto a la pancarta. La pintura puede recortarse
+     por abajo; el contenido, no. */
+  #view-menu #menu-continuar{top:16.2%;height:6.2%}
+  #view-menu #menu-ia{top:24.6%;height:8.8%}
+  #view-menu #menu-wifi{top:33.8%;height:8.8%}
+  #view-menu #menu-mazos{top:43%;height:8.8%}
+  #view-menu #menu-coleccion{top:52.2%;height:8.8%}
+  #view-menu #menu-tutorial{top:61.4%;height:8.8%}
+  #view-menu #menu-ajustes{top:70.6%;height:8.8%}
+  #view-menu .menu-profile-btn{transform:none;top:5%}
   /* Los paneles de tutorial y reglas se quedan dentro de la banda */
   #view-tutorial .tut-panel,#view-reglas .tut-panel{top:11.5%;bottom:11.5%}
 }
@@ -7049,25 +7075,34 @@ function noiseBuf(){
 }
 /* Cuerda pulsada Karplus-Strong: una línea de retardo con
    realimentación inicializada con ruido; cada nota se renderiza en
-   un AudioBuffer y se cachea por frecuencia. Ataque de cuerda real
-   (con su chasquido inicial suavizado) y caída natural larga. */
+   un AudioBuffer y se cachea por frecuencia. Timbre de lira SUAVE
+   (correcciones tras la v18, que sonaba a lavado metálico):
+   - caída corta (~1,8 s con envolvente que apaga la nota del todo),
+     para que una nota no se monte sobre las dos siguientes;
+   - excitación ya filtrada (ruido promediado), sin la ráfaga áspera
+     inicial de ruido blanco puro;
+   - paso bajo de un polo sobre la salida, que quita el brillo
+     metálico y deja el cuerpo cálido de la cuerda;
+   - entrada de 8 ms, sin chasquido. */
 function ksBuffer(freq){
   var key=Math.round(freq*10);
   if(KS_CACHE[key])return KS_CACHE[key];
-  var sr=AC.sampleRate,dur=3.2,len=Math.floor(sr*dur),buf=AC.createBuffer(1,len,sr),d=buf.getChannelData(0);
+  var sr=AC.sampleRate,dur=1.8,len=Math.floor(sr*dur),buf=AC.createBuffer(1,len,sr),d=buf.getChannelData(0);
   var N=Math.max(2,Math.round(sr/freq)),ring=new Float32Array(N),i,n;
-  for(i=0;i<N;i++)ring[i]=Math.random()*2-1;
-  var idx=0,damp=0.996;
+  var prev=Math.random()*2-1;
+  for(i=0;i<N;i++){ var w=Math.random()*2-1; ring[i]=(w+prev)*0.5; prev=w; }
+  var idx=0,damp=0.994,lp=0;
   for(n=0;n<len;n++){
     var cur=ring[idx];
     ring[idx]=damp*0.5*(cur+ring[(idx+1)%N]);
-    d[n]=cur;
+    lp+=0.42*(cur-lp);
+    d[n]=lp*Math.pow(1-n/len,1.35);
     idx=(idx+1)%N;
   }
-  /* Suaviza el chasquido del primer periodo y normaliza la cuerda */
-  var fade=Math.min(len,Math.floor(sr*0.004));
+  /* Entrada suave y nivel final de la cuerda */
+  var fade=Math.min(len,Math.floor(sr*0.008));
   for(i=0;i<fade;i++)d[i]*=i/fade;
-  for(i=0;i<len;i++)d[i]*=0.5;
+  for(i=0;i<len;i++)d[i]*=0.55;
   KS_CACHE[key]=buf; return buf;
 }
 /* Golpe grave renderizado: seno bajo (de ~85 Hz cayendo a ~52 Hz)
@@ -7112,40 +7147,36 @@ function sfxNoise(t0,dur,type,f0,f1,q,peak){
    canal (MUS_G) y con su propio volumen de Ajustes (SETTINGS.mus); a 0
    la música se apaga y los efectos siguen sonando igual que siempre.
    Melodía en modo dórico (la escala de la lira clásica) sobre Re:
-   cuatro frases cortas separadas por silencios, con un bordón grave
-   al empezar cada frase y una quinta suave bajo las notas largas.
-   El ciclo completo dura unos 50 segundos y se repite; en las vueltas
-   impares suena un poco más bajo y sin la quinta (la repetición exacta
-   tarda así unos 100 segundos), para que el fondo no canse ni se note
+   UNA SOLA VOZ de lira, sin bordón y sin quinta debajo (en la v18
+   esas voces extra, montadas sobre notas que duraban 3,2 s con
+   pulsos de 1,05 s, embarraban todo el sonido). Frases cortas y
+   lentas, con silencios largos entre ellas para que cada nota
+   respire y se apague antes de la siguiente. El ciclo completo
+   dura unos 69 segundos y se repite; en las vueltas impares suena
+   un poco más bajo, para que el fondo no canse ni se note
    mecánico. Suena igual en el menú y en el duelo:
    arranca con el primer toque en pantalla (ensureAudio) y no para
    al cambiar de pantalla. */
 /* Frecuencias de la escala dórica en Re */
 var MUS_N={D3:146.83,A3:220,C4:261.63,D4:293.66,E4:329.63,F4:349.23,G4:392,A4:440,B4:493.88,C5:523.25,D5:587.33,E5:659.25,F5:698.46};
-/* Secuencia: [nota, duración en pulsos de ~1,05 s]. 0 = silencio. */
+/* Secuencia: [nota, duración en pulsos de ~1,35 s]. 0 = silencio. */
 var MUS_SEQ=[
-  /* Frase 1: subida suave y reposo en La */
-  [MUS_N.A4,1],[MUS_N.C5,1],[MUS_N.D5,1],[MUS_N.E5,2],[MUS_N.D5,1],[MUS_N.C5,1],[MUS_N.A4,2],[0,2],
+  /* Frase 1: subida breve y reposo en La, con silencio largo */
+  [MUS_N.A4,1],[MUS_N.C5,1],[MUS_N.D5,2],[0,2],[MUS_N.C5,1],[MUS_N.A4,2],[0,3],
   /* Frase 2: respuesta más grave, reposo en Sol */
-  [MUS_N.G4,1],[MUS_N.A4,1],[MUS_N.C5,1],[MUS_N.D5,2],[MUS_N.C5,1],[MUS_N.A4,1],[MUS_N.G4,2],[0,2],
-  /* Frase 3: paseo por el centro de la escala */
-  [MUS_N.F4,1],[MUS_N.G4,1],[MUS_N.A4,1],[MUS_N.B4,1],[MUS_N.C5,2],[MUS_N.B4,1],[MUS_N.A4,1],[MUS_N.G4,1],[MUS_N.F4,2],[0,2],
+  [MUS_N.G4,1],[MUS_N.A4,1],[MUS_N.C5,2],[0,2],[MUS_N.A4,1],[MUS_N.G4,2],[0,3],
+  /* Frase 3: paseo corto por el centro de la escala */
+  [MUS_N.F4,1],[MUS_N.G4,1],[MUS_N.A4,2],[0,2],[MUS_N.G4,1],[MUS_N.F4,2],[0,3],
   /* Frase 4: cierre descendente hasta el Re grave de la lira */
-  [MUS_N.E4,1],[MUS_N.F4,1],[MUS_N.G4,1],[MUS_N.A4,2],[MUS_N.G4,1],[MUS_N.F4,1],[MUS_N.E4,1],[MUS_N.D4,3],[0,3]
+  [MUS_N.E4,1],[MUS_N.F4,1],[MUS_N.G4,2],[0,2],[MUS_N.F4,1],[MUS_N.E4,1],[MUS_N.D4,3],[0,4]
 ];
-/* Índice de MUS_SEQ donde empieza cada frase y bordón que la acompaña */
-var MUS_PHRASES=[{at:0,drone:MUS_N.D3},{at:8,drone:MUS_N.A3},{at:16,drone:MUS_N.D3},{at:26,drone:MUS_N.A3}];
-var MUS_BEAT=1.05;
+var MUS_BEAT=1.35;
 /* Nota de lira: cuerda pulsada Karplus-Strong (ksBuffer), con su
    ataque de cuerda y su caída natural; el parámetro ring ya no hace
    falta porque la cuerda trae su propio decaimiento. */
 function musPluck(freq,t0,ring,vol){
   if(!AC||!MUS_G||freq<=0)return;
   playBuf(ksBuffer(freq),t0,vol,MUS_G);
-}
-function musDroneFor(stepIdx){
-  for(var i=0;i<MUS_PHRASES.length;i++)if(MUS_PHRASES[i].at===stepIdx)return MUS_PHRASES[i].drone;
-  return 0;
 }
 function startMusic(){
   if(!AC||musTimer)return;
@@ -7159,13 +7190,9 @@ function startMusic(){
          vueltas seguidas no suenen calcadas sin dejar de ser el mismo ciclo */
       var vel=0.82+(((musStep*37)%10)/10)*0.18;
       if(musCycle%2===1)vel*=0.85;
-      var drone=musDroneFor(musStep%MUS_SEQ.length);
-      if(drone)musPluck(drone,t,6.5,0.30*vel);
-      if(freq>0){
-        musPluck(freq,t,Math.min(3.4,beats*MUS_BEAT+1.5),0.55*vel);
-        /* Quinta suave bajo las notas largas, solo en las vueltas pares */
-        if(beats>=2&&musCycle%2===0)musPluck(freq/1.5,t+0.02,2.8,0.16*vel);
-      }
+      /* Una sola voz: ni bordón ni quinta; la nota suena sola y se
+         apaga (su búfer dura 1,8 s) antes de que llegue la siguiente. */
+      if(freq>0)musPluck(freq,t,0,0.5*vel);
     }
     musStep++;
     if(musStep%MUS_SEQ.length===0)musCycle++;
