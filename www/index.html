@@ -1320,7 +1320,7 @@ footer{max-width:1280px;margin:0 auto;padding:0 12px 26px;color:var(--ink2);font
 #duel .pile .pile-top{color:#4a3a1c;font-size:.72cqw}
 #duel .pile.deck{border-color:#7c6224}
 #duel .pile.deck .pile-lab,#duel .pile.deck .pile-top{color:#f4ead0}
-/* Barra inferior: «Mi mano» en pergamino y «Terminar turno» azul y dorada */
+/* Barra inferior: la mano siempre visible en pergamino y «Terminar turno» azul y dorada */
 #duel .hand-zone{
   background:linear-gradient(180deg,#f2e8cd,#e8dcc3 55%,#d9c9a3);
   border:2px solid #7c6224;border-radius:6px 14px 8px 16px/12px 6px 14px 8px;
@@ -1331,7 +1331,8 @@ footer{max-width:1280px;margin:0 auto;padding:0 12px 26px;color:var(--ink2);font
 #duel #hand{min-height:6.8cqw;padding:.7cqw .3cqw .15cqw}
 #duel #hand .hcard{height:6.2cqw;flex:0 1 10.2cqw;font-size:.79cqw;padding:.5cqw .55cqw}
 #duel #hand .hcard + .hcard{margin-left:-1.65cqw}
-#duel #hand .hcard .nm{font-size:.86cqw}
+#duel #hand .hcard .nm{font-size:.8cqw;line-height:1.15;padding-right:2.1cqw;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+#duel #hand .hcard .cost{width:1.9cqw;height:1.9cqw;font-size:.85cqw;top:.35cqw;right:.35cqw}
 #duel #hand .hcard .ecost{font-size:.76cqw}
 #duel .duel-actions{align-items:stretch;margin:.35cqw 0}
 #duel .duel-actions .btn{min-height:3.3cqw;font-size:1.05cqw}
@@ -1658,7 +1659,7 @@ footer{max-width:1280px;margin:0 auto;padding:0 12px 26px;color:var(--ink2);font
         <div class="field-main">
           <div class="board" id="board"></div>
           <div class="hand-zone">
-            <div class="hand-zone-lab"><span><b>Mi mano</b> · <span id="hand-owner">—</span></span><span>Máx. 7 cartas</span></div>
+            <div class="hand-zone-lab"><span><b id="hand-owner">—</b> · <span id="hand-count"></span></span><span>Máx. 7 cartas</span></div>
             <div class="hand" id="hand"></div>
           </div>
           <div class="hintline" id="hint">…</div>
@@ -1757,7 +1758,7 @@ footer{max-width:1280px;margin:0 auto;padding:0 12px 26px;color:var(--ink2);font
       <p><b>Turno.</b> Tres pasos: 1) Inicio — tu energía sube (1, 2, 3, 4, 5 y luego 6) y robas 1 carta. 2) Acción libre — juega cartas y ataca en el orden que quieras; cada unidad ataca una vez por turno. 3) Final — se resuelven los efectos de fin de turno.</p>
       <p><b>Mano llena.</b> Máximo 7 cartas. Si robas con la mano llena, la carta robada se quema y va al descarte.</p>
       <p><b>Tablero.</b> 3 carriles (Puerto, Ágora, Olivar), cada uno con frente y apoyo: 6 espacios por jugador. Una unidad recién invocada entra agotada y no ataca ese turno, salvo con <span class="kw">Carga</span>.</p>
-      <p><b>Combate.</b> Desde el frente atacas al frente enemigo de tu carril; si está vacío, el daño va al Destino. El daño es simultáneo. Con <span class="kw">Alcance</span> puedes atacar desde apoyo al frente de tu carril sin recibir daño de vuelta; si ese frente está vacío, dañas el Destino. Con <span class="kw">Guardia</span>, los ataques a ese carril deben ir a esa unidad.</p>
+      <p><b>Combate.</b> Desde el frente atacas al frente enemigo de tu carril; si está vacío, el daño va al Destino. El daño es simultáneo. Con <span class="kw">Alcance</span> puedes atacar desde apoyo al frente de tu carril sin recibir daño de vuelta; si ese frente está vacío, dañas el Destino. Con <span class="kw">Guardia</span>, si la unidad con Guardia está en el frente, los ataques a ese carril deben ir a ella.</p>
       <p><b>Barrera.</b> Absorbe daño de combate y directo, con un máximo de 3. No impide efectos sin daño ni pérdida de Destino.</p>
       <p><b>Petrificación.</b> La unidad no ataca, no usa habilidades activadas y no se mueve hasta el final del próximo turno de su controlador. Sus pasivas siguen activas.</p>
       <p><b>Silencio.</b> Suspende todas las habilidades impresas, incluidas las pasivas, hasta el final del próximo turno de su controlador. No quita ATQ, PV, reliquias ni barrera.</p>
@@ -2908,7 +2909,7 @@ function endTurn(){
   } else if(G.mode==="2p"){
     showMsg("<h2 style='font-size:22px;margin-bottom:6px'>Pasa el teléfono</h2><p style='font-size:16px'>Turno de <b>"+esc(G.players[next].name)+"</b>. El otro jugador no debería mirar la pantalla.</p>",
       [{label:"Soy "+G.players[next].name+" · ver mi mano",fn:function(){hideMsg();startTurn(next,false);}}]);
-    G.active=next; renderDuel(true);
+    G.active=next; renderDuel();
   } else if(G.players[next].isAI){
     startTurn(next,false);
     setTimeout(aiTurn,650);
@@ -3351,7 +3352,7 @@ function mulliganStep(pi){
     [{label:"Quedarme con esta mano",fn:function(){hideMsg();mulliganStep(pi+1);}},
      {label:"Mulligan: cambiar las 5",fn:function(){ p.deck=shuffle(p.deck.concat(p.hand)); p.hand=[]; drawCards(p,5,"mulligan"); hideMsg(); showMsg("<h2 style='font-size:20px'>Nueva mano de "+esc(p.name)+"</h2><p style='font-size:15px;line-height:1.5'>"+p.hand.map(function(id){return esc(BYID[id][1])+" ("+BYID[id][5]+")";}).join(" · ")+"</p>",[{label:"Empezar",fn:function(){hideMsg();mulliganStep(pi+1);}}]); }}]);
 }
-function beginPlay(){ G.started=true; startTurn(G.first,true); }
+function beginPlay(){ G.started=true; startTurn(G.first,true); if(G.players[G.first]&&G.players[G.first].isAI)setTimeout(aiTurn,650); }
 function quitDuel(){
   G=null;
   document.getElementById("duel").classList.remove("active");
@@ -3536,7 +3537,7 @@ function checkSplash(){
   for(var k in SPLASH_KEYS){ if(!cur[k])delete SPLASH_KEYS[k]; }
   if(cand)showSplash(cand.card);
 }
-function renderDuel(hideHand){
+function renderDuel(){
   if(!G)return;
   var me=G.players[G.active], other=G.players[1-G.active];
   var humanTurn=!me.isAI&&G.started&&!G.over;
@@ -3635,28 +3636,30 @@ function renderDuel(hideHand){
   document.querySelectorAll("#board .pile").forEach(function(s){
     s.addEventListener("click",function(){ inspectPile(parseInt(s.getAttribute("data-owner"),10),s.getAttribute("data-pile")); });
   });
-  var ho=document.getElementById("hand-owner"); if(ho)ho.textContent=me.name+" · "+me.hand.length+"/7";
-  /* mano */
+  /* Mano de la franja inferior: es siempre la del jugador local (contra la
+     IA, el jugador que no es la IA; en wifi local, G.players[WIFI.myPi];
+     en 2p, el activo) y se muestra en cuanto el duelo ha empezado, también
+     durante el turno del rival, para poder leer las cartas; jugarlas solo
+     es posible en el propio turno (los guardias están en onHandClick). */
+  var localPi=G.active;
+  if(G.mode==="wifi"&&typeof WIFI!=="undefined")localPi=WIFI.myPi;
+  else if(G.players[0].isAI)localPi=1;
+  else if(G.players[1].isAI)localPi=0;
+  var lp=G.players[localPi];
+  var ho=document.getElementById("hand-owner"); if(ho)ho.textContent=lp.name;
+  var hcount=document.getElementById("hand-count"); if(hcount)hcount.textContent=(lp.hand.length===1?"1 carta":lp.hand.length+" cartas");
   var handEl=document.getElementById("hand");
-  if(hideHand||!G.started){ handEl.innerHTML='<p class="count-note" style="align-self:center">Mano oculta.</p>'; }
-  else if(me.isAI){ handEl.innerHTML='<p class="count-note" style="align-self:center">Turno de la IA…</p>'; }
-  else if(G.mode==="wifi"&&typeof WIFI!=="undefined"&&G.active!==WIFI.myPi){
-    /* Turno del rival en wifi: su mano nunca sale de su teléfono, así que
-       aquí solo hay dorsos (con SU dorso) y el número de cartas. */
-    handEl.innerHTML=(me.hand.map(function(){
-      return '<span class="hcard hback db-'+(me.dorso||"buho")+'" aria-hidden="true"><span class="greca-strip light"></span><span class="nm">Ecos del Olimpo</span></span>';
-    }).join("")||'<p class="count-note" style="align-self:center">Sin cartas en mano.</p>')
-      +'<p class="count-note" style="align-self:center">Mano de '+esc(me.name)+' en dorsos: '+me.hand.length+' carta(s).</p>';
-  }
+  if(!G.started){ handEl.innerHTML='<p class="count-note" style="align-self:center">El duelo aún no ha empezado.</p>'; }
   else{
-    handEl.innerHTML=me.hand.map(function(id,hi){
-      var c=BYID[id], cost=effCost(me,c), ok=cost<=me.energy&&!G.over;
+    var myTurn=(localPi===G.active);
+    handEl.innerHTML=lp.hand.map(function(id,hi){
+      var c=BYID[id], cost=effCost(lp,c), ok=myTurn&&cost<=lp.energy&&!G.over;
       var extra=c[4]==="Unidad"?(' · '+c[6]+'/'+c[7]):'';
-      return '<button class="hcard'+(ok?" playable":" cantpay")+((G.sel&&G.sel.kind==="hand"&&G.sel.idx===hi)?" selected":"")+'" data-hand="'+hi+'" '+(G.over?"disabled":"")+' aria-label="'+esc(c[1])+', consume '+cost+' de energía'+(ok?"":", no tienes energía suficiente")+'">'
+      return '<button class="hcard'+(myTurn?(ok?" playable":" cantpay"):"")+((myTurn&&G.sel&&G.sel.kind==="hand"&&G.sel.idx===hi)?" selected":"")+'" data-hand="'+hi+'" '+(G.over?"disabled":"")+' aria-label="'+esc(c[1])+', consume '+cost+' de energía'+(ok?"":(myTurn?", no tienes energía suficiente":""))+'">'
         +'<span class="cost">'+cost+'</span>'
         +'<span class="nm">'+esc(c[1])+'</span><span style="color:var(--ink2)">'+c[4]+' · '+c[3]+extra+'</span>'
-        +'<span class="ecost'+(ok?"":" lack")+'">Consume '+cost+' de energía'+(ok?"":(" · te faltan "+(cost-me.energy)))+'</span>'
-        +'<span class="fx">'+esc(c[8])+'</span></button>';
+        +'<span class="ecost'+(ok?"":" lack")+'">Consume '+cost+' de energía'+(ok?"":(myTurn?(" · te faltan "+(cost-lp.energy)):""))+'</span>'
+        +'</button>';
     }).join("")||'<p class="count-note" style="align-self:center">Sin cartas en mano.</p>';
     handEl.querySelectorAll("[data-hand]").forEach(function(el){
       el.addEventListener("click",function(){ onHandClick(parseInt(el.getAttribute("data-hand"),10)); });
@@ -3688,10 +3691,20 @@ function wifiNotMyTurn(){
   return G&&G.mode==="wifi"&&typeof WIFI!=="undefined"&&WIFI.connected&&G.active!==WIFI.myPi;
 }
 function onHandClick(hi){
-  if(!G||G.over)return; var p=G.players[G.active]; if(p.isAI)return;
+  if(!G||G.over)return;
+  /* La franja inferior muestra siempre la mano del jugador local: al tocar
+     una carta, su efecto se lee en el panel de la izquierda en cualquier
+     turno. Jugarla solo es posible en el propio turno: los guardias de IA
+     y de wifi de abajo lo impiden fuera de él. */
+  var localPi=G.active;
+  if(G.mode==="wifi"&&typeof WIFI!=="undefined")localPi=WIFI.myPi;
+  else if(G.players[0].isAI)localPi=1;
+  else if(G.players[1].isAI)localPi=0;
+  var lp=G.players[localPi], id=lp.hand[hi]; if(id===undefined)return; var c=BYID[id];
+  inspectCard(id,null,lp.name);
+  var p=G.players[G.active]; if(p.isAI)return;
   if(wifiNotMyTurn()){document.getElementById("hint").textContent="Wifi local: es el turno del otro jugador. Espera a que termine en su teléfono.";return;}
-  var id=p.hand[hi], c=BYID[id];
-  inspectCard(id,null,p.name);
+  if(localPi!==G.active)return;
   if(G.sel&&G.sel.kind==="hand"&&G.sel.idx===hi){
     if(c[4]==="Bendición"||NO_TARGET_TACTICS.indexOf(id)>=0){ G.sel=null; playCard(G.active,hi,null,tacticTargetFor(G.active,id)); }
     return;
@@ -4016,7 +4029,7 @@ var TUT_PRAC=[
   onDest:function(tp){ tpErr(tp,"Delante de tu carril hay una unidad enemiga: el ataque va a ella, no al Destino. Solo se golpea el Destino cuando el frente de tu carril está vacío."); }
 },
 { n:6, title:"Carga y Alcance",
-  say:"Dos palabras clave de ataque. <b>Carga</b>: la unidad puede atacar el mismo turno en que entra, sin esperar a dejar de estar agotada. <b>Alcance</b>: puede atacar desde el apoyo sin recibir daño de vuelta. Tu Arquera de Arcadia ya espera en el apoyo del Puerto; en mano tienes al Jinete tesalio (cuesta 3, con Carga). Dos frentes enemigos tienen 1 PV: la Sombra del Tártaro en el Ágora y un Lancero en el Puerto. Primero, la Carga: invoca al Jinete en el frente del Ágora.",
+  say:"Dos palabras clave de ataque. <b>Carga</b>: la unidad puede atacar el mismo turno en que entra, sin esperar un turno. <b>Alcance</b>: puede atacar desde el apoyo sin recibir daño de vuelta. Tu Arquera de Arcadia ya espera en el apoyo del Puerto; en mano tienes al Jinete tesalio (cuesta 3, con Carga). Dos frentes enemigos tienen 1 PV: la Sombra del Tártaro en el Ágora y un Lancero en el Puerto. Primero, la Carga: invoca al Jinete en el frente del Ágora.",
   setup:function(tp){ tp.energy=3; tp.hand=["EO-038"]; tp.my[3]=tpUnit("EO-002"); tp.en[1]=tpUnit("EO-041"); tp.en[0]=tpUnit("EO-009"); },
   onSlot:function(tp,pos){
     if(tp.selHand<0){ tpErr(tp,"Primero toca una carta de tu mano y después la casilla."); return; }
@@ -4051,7 +4064,7 @@ var TUT_PRAC=[
   }
 },
 { n:7, title:"Guardia y Barrera",
-  say:"<b>Guardia</b> obliga: mientras una unidad con Guardia protege un carril, los ataques a ese carril deben ir a ella; no puedes saltarla para golpear el Destino. Y <b>Barrera</b> absorbe daño antes de que toque los PV (máximo 3). El Destino rival está a 2, pero una Falange ateniense con Guardia cierra el Ágora. Tu Arquera, con Alcance desde el apoyo, puede dañarla sin recibir daño. Empieza con ella.",
+  say:"<b>Guardia</b> obliga: mientras una unidad con Guardia esté en el frente de un carril, los ataques a ese carril deben ir a ella; no puedes saltarla para golpear el Destino. Y <b>Barrera</b> absorbe daño antes de que toque los PV (máximo 3). El Destino rival está a 2, pero una Falange ateniense con Guardia cierra el Ágora. Tu Arquera, con Alcance desde el apoyo, puede dañarla sin recibir daño. Empieza con ella.",
   setup:function(tp){ tp.energy=1; tp.enDest=2; tp.hand=["EO-017"]; tp.my[1]=tpUnit("EO-010"); tp.my[4]=tpUnit("EO-002"); tp.en[1]=tpUnit("EO-031"); },
   buttons:function(tp){ return tp.step===2?[{id:"lance",label:"Turno rival: un Lancero ataca a tu Guerrero",cls:"terra"}]:[]; },
   onButton:function(tp,id){
@@ -4104,7 +4117,7 @@ var TUT_PRAC=[
   onDest:function(tp){ tpErr(tp,"El Rayo de Zeus solo puede golpear a una unidad enemiga, nunca al Destino directamente."); }
 },
 { n:9, title:"Reliquias y sustitución de equipo",
-  say:"Cada unidad lleva como máximo <b>1 reliquia</b>. Si le equipas otra, la anterior <b>se descarta</b>: sustituir equipo es una decisión, no una suma. Tu Hoplita ya lleva la Lanza de bronce (+1 ATQ: golpea con 2, míralo en su ficha). En tu mano tienes el Hacha de guerra (+2 ATQ) y 1 de energía, lo que cuesta. Equípasela al Hoplita y observa qué pasa con la Lanza.",
+  say:"Cada unidad lleva como máximo <b>1 reliquia</b>. Si le equipas otra, la anterior <b>se descarta</b>: sustituir equipo es una decisión, no una suma. Tu Hoplita ya lleva la Lanza de bronce (+1 ATQ: golpea con 2, míralo en su ficha). En tu mano tienes el Hacha de guerra (+2 ATQ), que cuesta 1 de energía, justo lo que tienes. Equípasela al Hoplita y observa qué pasa con la Lanza.",
   setup:function(tp){ tp.energy=1; tp.hand=["EO-053"]; tp.my[1]=tpUnit("EO-001",{relic:"EO-024",pv:4,maxpv:4}); tp.my[3]=tpUnit("EO-002"); },
   onMyUnit:function(tp,pos){
     if(tp.selHand<0){ tpErr(tp,"Primero toca el Hacha de guerra en tu mano y después la unidad que la recibirá."); return; }
@@ -4192,7 +4205,7 @@ var TUT_PRAC=[
     if(tp.selUnit!==0){ tpErr(tp,"Primero toca a tu Hoplita para prepararlo y después la casilla adyacente."); return; }
     if(pos===1){
       tp.my[1]=tp.my[0]; tp.my[0]=null; tp.my[1].exhausted=true; tp.step=1;
-      tpMsg(tp,"Movido al Ágora… y agotado para atacar: moverse con las Sandalias consume el ataque del turno. Termina el turno y ataca mañana, con el carril libre.");
+      tpMsg(tp,"Movido al Ágora… y agotado para atacar: moverse con las Sandalias consume el ataque del turno. Termina el turno y ataca en tu próximo turno, con el carril libre.");
       return;
     }
     if(pos===2){ tpErr(tp,"El Olivar no es adyacente al Puerto: hay un carril en medio. Las Sandalias solo llegan al carril de al lado."); return; }
@@ -4200,7 +4213,7 @@ var TUT_PRAC=[
   },
   onEnUnit:function(tp,pos){ tpErr(tp,"Atacar al Cerbero (4/6) con ATQ 1 sería regalar al Hoplita: te devolvería 4 y caería. La salida que te dan las Sandalias es cambiar de carril."); },
   onDest:function(tp){
-    if(tp.step===2&&tp.selUnit===1){ tp.enDest=2; tpComplete(tp,"Golpe directo: el Destino rival baja a 2. Cambiar de carril no es huir: es elegir dónde pelea tu unidad. Solo las habilidades mueven unidades, y casi siempre a un carril adyacente."); }
+    if(tp.step===2&&tp.selUnit===1){ tp.enDest=2; tpComplete(tp,"Golpe directo: el Destino rival baja a 2. Cambiar de carril no es huir: es elegir dónde pelea tu unidad. Solo las habilidades mueven unidades, y las Sandalias solo llegan al carril de al lado."); }
     else tpGenericErr(tp);
   }
 },
@@ -4744,7 +4757,7 @@ chalDef({ n:3, title:"Protege tu apoyo",
 }),
 chalDef({ n:4, title:"Remonta con poco Destino",
   blurb:"Vas 4 a 8 en Destino. Las cartas de Ares pegan más cuando vas perdiendo: úsalo y remonta.",
-  say:"Último desafío: <b>remonta</b>. Vas perdiendo: tu Destino está a <b>4</b> y el rival, a <b>8</b>. Pero tu campo es de Ares, y las cartas de Ares cobran cuando vas mal: fíjate en que el <b>Lancero de bronce</b> y el <b>Guerrero espartano</b> ya golpean con +1 por ir tu Destino por debajo (míralo en sus fichas: ATQ 3). El Puerto está libre; en el Ágora cierra un Hoplita veterano con Barrera 1. En tu mano: <b>Grito de guerra</b>, <b>Carga implacable</b> y la <b>Lanza de bronce</b>; tienes 6 de energía. Objetivo: terminar el turno con el Destino rival <b>por debajo del tuyo</b> (o a 0). Si lo dejas igualado o por encima, no hay remontada.",
+  say:"Último desafío: <b>remonta</b>. Vas perdiendo: tu Destino está a <b>4</b> y el rival, a <b>8</b>. Pero tu campo es de Ares, y las cartas de Ares cobran cuando vas mal: fíjate en que el <b>Lancero de bronce</b> ya golpea con +1 por ir tu Destino por debajo del rival, y el <b>Guerrero espartano</b> con +1 por tener 10 o menos de Destino (míralo en sus fichas: ATQ 3). El Puerto está libre; en el Ágora cierra un Hoplita veterano con Barrera 1. En tu mano: <b>Grito de guerra</b>, <b>Carga implacable</b> y la <b>Lanza de bronce</b>; tienes 6 de energía. Objetivo: terminar el turno con el Destino rival <b>por debajo del tuyo</b> (o a 0). Si lo dejas igualado o por encima, no hay remontada.",
   setup:function(tp){
     tp.myDest=4; tp.enDest=8; tp.energy=6; tp.hand=["EO-020","EO-019","EO-024"];
     tp.my[0]=tpUnit("EO-009"); tp.my[1]=tpUnit("EO-010");
@@ -6179,7 +6192,7 @@ function updateContinueBtn(){
    terminar NO apunta victoria ni derrota: eso solo ocurre en checkEnd. */
 (function(){
   var origRender=renderDuel;
-  renderDuel=function(h){ origRender(h); duelSaveWrite(); };
+  renderDuel=function(){ origRender(); duelSaveWrite(); };
   var origQuit=quitDuel;
   quitDuel=function(){ duelSaveClear(); origQuit(); wifiBandHide(); updateContinueBtn(); };
   var origMenuGo=menuGo;
@@ -6464,7 +6477,7 @@ window.EcosH2H={recordEnd:h2hRecordEnd,recordInterrupted:h2hRecordInterrupted};
    interrumpida aunque el duelo ya se haya cerrado en pantalla). */
 (function(){
   var origRender2=renderDuel;
-  renderDuel=function(h){ origRender2(h); h2hSnapshot(); };
+  renderDuel=function(){ origRender2(); h2hSnapshot(); };
   var origApply=wifiApplyState;
   wifiApplyState=function(v){
     origApply(v);
