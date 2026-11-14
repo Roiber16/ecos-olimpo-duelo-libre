@@ -8,6 +8,7 @@
     "open:android": "npx cap open android"
   },
   "dependencies": {
+    "@byrds/capacitor-mdns": "7.1.0",
     "@capacitor/android": "^8.0.0",
     "@capacitor/core": "^8.0.0",
     "capacitor-lan-server": "file:plugins/capacitor-lan-server"
