@@ -48,4 +48,6 @@ require('./fix-manifest.js');
 require('./fix-fullscreen.js');
 // Misma firma debug en todas las builds (actualizar sin desinstalar).
 require('./fix-signing.js');
+// Firma debug explícita en build.gradle (por si Gradle no usa ~/.android).
+require('./fix-debug-signing.js');
 console.log('setup-android.js terminado.');
