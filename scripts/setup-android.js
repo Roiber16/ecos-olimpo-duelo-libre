@@ -44,4 +44,8 @@ console.log('Icono y splash copiados.');
 
 // Reutiliza fix-manifest.js (fija landscape + permiso de cámara).
 require('./fix-manifest.js');
+// Pantalla completa inmersiva (sin barra de estado ni navegación).
+require('./fix-fullscreen.js');
+// Misma firma debug en todas las builds (actualizar sin desinstalar).
+require('./fix-signing.js');
 console.log('setup-android.js terminado.');
