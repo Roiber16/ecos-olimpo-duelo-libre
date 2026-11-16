@@ -40,6 +40,9 @@ jobs:
       - name: Sincronizar la web con Android
         run: npx cap sync android
 
+      - name: Fijar firma debug tras el sync
+        run: node scripts/fix-debug-signing.js
+
       - name: Compilar APK debug
         run: |
           cd android
