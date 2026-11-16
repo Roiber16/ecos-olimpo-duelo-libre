@@ -2113,6 +2113,106 @@ footer{display:none}
   .fl-ct-main{flex-direction:column;overflow-y:auto;scrollbar-width:thin}
   .fl-panel,#ct-panel-deck{flex:none;height:320px}
 }
+/* ================= MIS MAZOS v23: LISTAS REALES EN ANDROID =================
+   Diagnóstico tras probar la v22 en Android real (Appetize, Pixel 7):
+   las listas salían vacías y lo único visible eran filas «fantasma»
+   en una franja oscura. Eran DOS fallos distintos:
+   1) GEOMETRÍA HEREDADA: los paneles conservaban las reglas de la era
+      del escenario (#ct-panel-cat{width:33%;height:57.5%} y
+      #ct-panel-deck{width:29%;height:60.5%}, pensadas para posicionar
+      en % sobre la pintura). En flujo, ese height en % se resuelve
+      contra .fl-ct-main, cuya altura sale de flex (indefinida): en el
+      WebView real el panel se encogía a su contenido y la lista, con
+      flex:1 y min-height:0, colapsaba a 0 px —recortada por su
+      overflow, sin filas visibles, sin zona que arrastrar y con los
+      botones +/− inalcanzables—. En el navegador de escritorio el %
+      sí se resolvía, y por eso allí «se veía».
+   2) FANTASMAS PINTADOS: el fondo (constructor.webp) ES una maqueta
+      pintada de esta misma pantalla: trae su propio «Nombre del
+      mazo: Mazo Atenea», sus filas («Hoplita de Atenea — 2⚡· 3/2 ·
+      Disp. x4»…), su lista de mazo 24/24 y su línea de resumen. Al
+      encogerse los paneles reales, la maqueta asomaba por los huecos
+      oscurecidos y se leía como filas y textos duplicados.
+   Corrección:
+   - Se anula la geometría heredada de los dos paneles (sin width ni
+     height en %: su tamaño lo dan el flex de .fl-ct-main y el
+     estiramiento, ambos definidos) y las listas reciben además un
+     suelo de altura en píxeles: aunque cualquier eslabón de la cadena
+     volviera a fallar en un WebView, la lista NUNCA puede colapsar a
+     0 y las filas se ven dentro del panel sí o sí.
+   - Las filas van con flex:none: no se encogen jamás, el contenido
+     desborda de verdad y la lista se desplaza con el dedo
+     (overflow-y:auto + desplazamiento táctil con inercia +
+     touch-action:pan-y + overscroll contenido, para que el arrastre
+     no se lo trague la página).
+   - La pintura-maqueta deja de usarse como fondo en esta vista: el
+     fondo es una textura lisa de aguadas mates SIN texto pintado y,
+     encima, toda la zona de trabajo es una hoja de pergamino OPACA
+     que lo cubre todo. Sin pintura con texto debajo no puede asomar
+     ningún «Nombre del mazo» repetido, ninguna fila pintada ni
+     ninguna segunda línea de resumen: lo único que se lee es la
+     interfaz real, una sola vez.
+   - El contenedor gana overflow-y:auto como red de seguridad: si en
+     una pantalla muy baja algo no cabe, la vista entera se desplaza
+     en vez de recortarse (el mismo patrón de Ajustes, confirmado). */
+#view-constructor .fl-bg{
+  filter:none;
+  background-color:#4a3a26;
+  /* Una sola declaración con !important: gana al estilo en línea que
+     cargaba la pintura-maqueta y pinta solo aguadas, sin texto. */
+  background-image:var(--grain),
+    radial-gradient(ellipse 60% 50% at 12% 8%,rgba(143,176,196,.35),rgba(143,176,196,0) 70%),
+    radial-gradient(ellipse 55% 45% at 88% 90%,rgba(98,74,122,.30),rgba(98,74,122,0) 70%),
+    radial-gradient(ellipse 50% 40% at 85% 10%,rgba(168,177,132,.28),rgba(168,177,132,0) 70%),
+    linear-gradient(180deg,#54432c,#3c2d1c 60%,#2e2115)!important;
+}
+#view-constructor .fl-ct-wrap{
+  background-color:#e9dcba;background-image:var(--grain),
+    radial-gradient(ellipse 46% 30% at 92% 3%,rgba(98,74,122,.10),rgba(98,74,122,0) 70%),
+    radial-gradient(ellipse 40% 28% at 4% 96%,rgba(176,141,87,.14),rgba(176,141,87,0) 70%),
+    linear-gradient(180deg,#f0e5c6,#e9dcba 55%,#ddcb9f);
+  overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
+}
+#view-constructor #ct-panel-cat{position:relative;left:auto;top:auto;width:auto;height:auto;flex:1.25 1 0;min-width:0;min-height:0}
+#view-constructor #ct-panel-deck{position:relative;left:auto;top:auto;width:auto;height:auto;flex:1 1 0;min-width:0;min-height:0}
+#view-constructor .fl-ct-main{align-items:stretch}
+#view-constructor .catlist,#view-constructor .decklist{
+  flex:1 1 auto;min-height:180px;max-height:none;
+  overflow-y:auto;overflow-x:hidden;
+  -webkit-overflow-scrolling:touch;touch-action:pan-y;overscroll-behavior:contain;
+  background:rgba(247,240,218,.5);border:1px solid rgba(120,90,40,.35);border-radius:6px;
+  padding:6px;scrollbar-width:thin;
+}
+#view-constructor .catrow{flex:none}
+#view-constructor .decklist .dl{flex:none}
+#view-constructor .qtybtn{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+@media (orientation:landscape) and (max-height:480px){
+  #view-constructor .catlist,#view-constructor .decklist{min-height:140px}
+}
+@media (max-width:760px){
+  #view-constructor #ct-panel-cat,#view-constructor #ct-panel-deck{flex:none;height:auto}
+  #view-constructor .catlist,#view-constructor .decklist{height:300px;flex:none}
+}
+/* ---------- Tutorial: el paso 1 se ve entero en el teléfono ----------
+   En horizontal bajo, la cabecera, la ruta y la introducción empujaban
+   el panel «Elige tu afinidad · la lección de Eudora» hasta el borde
+   inferior del panel y su insignia «1» quedaba a medias. Se compacta
+   un grado todo lo que va por encima de ese panel (solo en pantallas
+   bajas apaisadas) y el panel gana un poco de altura en pantallas
+   anchas: el paso 1 sube y se ve entero sin desplazar. */
+@media (min-aspect-ratio:2096/1184){
+  #view-tutorial .tut-panel{top:10.6%;bottom:10.6%}
+}
+@media (orientation:landscape) and (max-height:540px){
+  #view-tutorial .tut-panel{padding:10px 14px 22px}
+  #view-tutorial .tut-head{margin-bottom:6px}
+  #view-tutorial .tut-route{margin:0 0 8px}
+  #view-tutorial .tut-route span{padding:3px 10px 3px 5px;font-size:12.5px}
+  #view-tutorial .tut-short{margin:4px 0}
+  #view-tutorial .tut-step{margin:0 0 6px}
+  #view-tutorial .tut-step .sn{width:28px;height:28px;font-size:14px}
+  #view-tutorial .tut-step h3{font-size:17px}
+}
 </style>
 </head>
 <body>
