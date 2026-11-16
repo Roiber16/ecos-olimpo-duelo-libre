@@ -2261,6 +2261,85 @@ footer{display:none}
 /* Tutorial: su panel se desplaza con el dedo con inercia, como el
    resto de zonas de desplazamiento de la aplicación. */
 #view-tutorial .tut-panel{-webkit-overflow-scrolling:touch;touch-action:pan-y;overscroll-behavior:contain}
+/* ================= v25: SALIR DE MIS MAZOS Y PASO 1 DEL TUTORIAL =================
+   Diagnóstico tras probar la v24 en Android real (Appetize, Pixel 7,
+   1080×2400 horizontal): la edición carta por carta ya funciona, pero
+   quedaban dos recortes en el borde inferior.
+   MIS MAZOS: el resumen de validación se veía solo por arriba y los
+   tres botones (Guardar / Probar contra la IA / Volver) quedaban
+   fuera de la vista sin forma de llegar a ellos. La causa no era la
+   altura total: el contenedor .fl-ct-wrap SÍ puede desplazar todo su
+   contenido, pero las dos listas interiores (.catlist y .decklist,
+   que ocupan casi toda la pantalla) llevaban
+   overscroll-behavior:contain —al llegar la lista a su final, el
+   gesto NO se encadena al contenedor de la pantalla— y el contenedor
+   no declaraba touch-action. Casi todo arrastre del dedo caía sobre
+   una lista, desplazaba solo la lista y la pantalla entera nunca se
+   movía: la validación y los botones eran inalcanzables y no había
+   ningún «Volver» en la cabecera para salir.
+   Corrección, sin tocar la edición carta por carta:
+   - Las listas dejan de atrapar el gesto (overscroll-behavior:auto):
+     al llegar a su final, el arrastre sigue en la pantalla entera.
+   - El contenedor declara touch-action:pan-y y gana un colchón
+     inferior (con el inset seguro) para que al desplazar del todo
+     los botones queden enteros y separados del borde.
+   - La fila de los tres botones va PEGAJOSA al borde inferior del
+     contenedor (position:sticky;bottom:0): se ve entera y se puede
+     tocar desde que se entra, sin desplazar, y al llegar al final
+     ocupa su sitio natural. Nada queda más alto que lo desplazable.
+   - La cabecera gana su propio botón «Volver» (#deck-back-top, misma
+     acción que el «Volver» de abajo): salir nunca exige desplazar.
+   - En horizontal bajo, las listas bajan a 150 px y la validación y
+     los botones se compactan un grado, para acortar el recorrido.
+   TUTORIAL: «Elige tu afinidad · la lección de Eudora» salía medio
+   recortado en el borde inferior de la vista inicial. En pantallas
+   anchas el panel iba anclado al 11,5 % del escenario (más bajo de
+   lo visible) y, en horizontal bajo, el «Volver» de arriba, la
+   cabecera de Eudora, la ruta en dos filas y los dos párrafos
+   empujaban el panel del paso 1 por debajo del pliegue del panel.
+   Corrección: en pantallas anchas el panel del tutorial sube al
+   6,5 % (Reglas no se toca) y en horizontal de hasta 640 px de alto
+   se compacta todo lo que va por encima del paso 1 (medallón,
+   título, ruta en UNA fila, párrafos y el propio «Volver»), de modo
+   que la insignia «1» y el título del paso se ven enteros al entrar,
+   sin desplazar. El contenido y el orden no cambian. */
+#view-constructor .fl-ct-wrap{touch-action:pan-y;padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}
+#view-constructor .catlist,#view-constructor .decklist{overscroll-behavior:auto}
+#view-constructor #deck-back-top{flex:none}
+#view-constructor .fl-ct-btns{
+  position:sticky;bottom:0;z-index:6;
+  background:linear-gradient(180deg,rgba(233,220,186,0),#e9dcba 32%);
+  padding:10px 2px 2px;
+}
+@media (orientation:landscape) and (max-height:480px){
+  #view-constructor .catlist,#view-constructor .decklist{height:150px}
+  #view-constructor .fl-valid{font-size:11.5px;line-height:1.3;padding:5px 10px;gap:0 14px}
+  #view-constructor .fl-bigbtn{min-height:40px;padding:7px 10px}
+}
+/* --- Tutorial: el paso 1 entero en la vista inicial --- */
+@media (min-aspect-ratio:2096/1184){
+  #view-tutorial .tut-panel{top:6.5%;bottom:6.5%}
+}
+@media (orientation:landscape) and (max-height:640px){
+  #view-tutorial .tut-panel{padding:10px 14px 14px}
+  #view-tutorial .tut-panel>.btnrow{margin-bottom:6px!important}
+  #view-tutorial .tut-volver{padding:5px 18px;min-height:36px;font-size:14.5px}
+  #view-tutorial .tut-head{gap:10px;margin-bottom:5px}
+  #view-tutorial .tut-head .tut-medal{width:52px;height:52px}
+  #view-tutorial .tut-head .tut-medal .fl{font-size:21px}
+  #view-tutorial .tut-head h2{font-size:21px}
+  #view-tutorial .tut-head p{font-size:12px;margin-top:1px}
+  #view-tutorial .tut-head .greca-strip{height:9px;background-size:20px 9px;margin-top:4px}
+  #view-tutorial .tut-route{flex-wrap:nowrap;margin:0 0 6px;gap:5px}
+  #view-tutorial .tut-route span{padding:2px 8px 2px 4px;font-size:11.5px;gap:5px;white-space:nowrap}
+  #view-tutorial .tut-route b{width:18px;height:18px;font-size:11px}
+  #view-tutorial .tut-panel .lead{font-size:13.5px;margin:2px 0 4px}
+  #view-tutorial .tut-short{font-size:13.5px;line-height:1.42;margin:3px 0}
+  #view-tutorial .tut-panel>.panel{padding:9px 12px}
+  #view-tutorial .tut-step{margin:0 0 5px}
+  #view-tutorial .tut-step .sn{width:26px;height:26px;font-size:13px}
+  #view-tutorial .tut-step h3{font-size:16.5px}
+}
 </style>
 </head>
 <body>
@@ -2420,6 +2499,7 @@ footer{display:none}
             <label for="deck-name"><span aria-hidden="true">✎</span> Nombre del mazo:</label>
             <input type="text" id="deck-name" value="Mi mazo" aria-label="Nombre del mazo" />
           </div>
+          <button class="fl-mini pergamino" id="deck-back-top" type="button">Volver</button>
         </div>
         <div class="fl-ct-main">
           <div class="fl-panel" id="ct-panel-cat">
@@ -8241,6 +8321,7 @@ document.getElementById("deck-save").addEventListener("click",function(){
   if(typeof updateProfileUI==="function")updateProfileUI();
 });
 document.getElementById("deck-back").addEventListener("click",function(){ menuGo("menu"); });
+document.getElementById("deck-back-top").addEventListener("click",function(){ menuGo("menu"); });
 /* ---------- Jugar contra la IA: «Elegir» entra directo al duelo ---------- */
 document.querySelectorAll("[data-npc-choose]").forEach(function(b){
   b.addEventListener("click",function(){
